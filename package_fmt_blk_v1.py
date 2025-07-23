@@ -36,9 +36,8 @@ class OLK(object):
             ent = self.ENT()
             self.files.append(ent)
             ent.read(f)
-        startof = f.tell()
         for _a,e in enumerate(self.files):
-            f.seek(startof + e.addr)
+            f.seek(e.addr)
             fil = open(str(_a) + ".bin",'wb')
             fout = f.read(e.size)
             fil.write(fout)
