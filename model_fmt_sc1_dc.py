@@ -218,6 +218,7 @@ class MDL(object):
             self.bone_position_y = f.s16()
             self.bone_position_z = f.s16()
             self.parent_bone_id = f.s16()
+
             ret = f.tell()
             f.seek(self.vertex_list_pointer)
             for x in range(self.vertex_count):
@@ -228,6 +229,7 @@ class MDL(object):
                 v = self.Cords()
                 v.read(f)
                 self.nor.append(v)
+            f.seek(ret)
         def write(self,f : FWrite):
             f.u8(self.bone_id0)
             f.u8(self.bone_id1)
@@ -245,5 +247,37 @@ class MDL(object):
             f.s16(self.bone_position_y)
             f.s16(self.bone_position_z)
             f.s16(self.parent_bone_id)
-    
+    class Polygon(object):
+        class Index(object):
+            def __init__(self):
+                self.pos_index = 0
+                self.nor_index = 0
+                self.uv = (0.0,0.0)
+            def read(self,f:FRead):
+                self.pos_index = f.u16()
+                self.nor_index = f.u16()
+                self.uv = f.f16_2()
+            def write(self,f:FWrite):
+                f.u16(self.pos_index)
+                f.u16(self.nor_index)
+                f.f16_2(self.uv)
+        def __init__(self):
+            self.mat_id = 0
+            self.uv_bind = 0
+            self.strip = []
+        def read(self,f:FRead):
+            self.mat_id = f.u8()
+            self.uv_bind = f.u16()
+            strip_len = f.u8()
+            for x in range(strip_len):
+                i = self.Index()
+                i.read(f)
+                self.strip.append(i)
+        def write(self,f:FWrite):
+            f.u8(self.mat_id)
+            f.u16(self.uv_bind)
+            f.u8(len(self.strip))
+            for x in self.strip: x.write(f)
+        
+        
 
