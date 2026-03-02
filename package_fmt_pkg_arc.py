@@ -12,24 +12,53 @@ def rR(f,o,l):#Read n Return, Takes file,offset,size returns data
     d = f.read(l)
     f.seek(c)
     return d
+def getString(f,offset = 0):
+        if(offset):
+            ret = f.tell()
+            f.seek(offset)
+        result = ""
+        tmpChar = f.read(1)
+        while ord(tmpChar) != 0:
+            result += tmpChar.decode("utf-8")
+            tmpChar = f.read(1)
+        if(offset):
+            f.seek(ret)
+        return result
+class NMData(object):
+    def __init__(self):
+        self.offset = 0
+        self.flags = []
+        self.name = ""
+    def read(self,f):
+        self.offset = u16(f)
+        for x in range(10):
+            self.flags.append(u8(f))
+        self.name = getString(f,u32(f))
 
 class PKG(object):
     def __init__(self):
         self.files = []
+        self.names = []
     def read(self,f):
         count = u32(f)
         start = u32(f)
-        end = u32(f)
+        named_offset = u32(f)
         mappings = []
         for _a in range(count):
             mappings.append(u32(f))
         sizes = []
-        mappings.append(end)
+        mappings.append(named_offset)
         for a in range(count):
             sizes.append(mappings[a+1]-mappings[a])
         mappings.pop()
         for idx,a in enumerate(mappings):
             self.files.append(f.read(sizes[idx]))
+        f.seek(named_offset+0x10)
+        for idx,a in enumerate(mappings):
+            name_dat = NMData()
+            name_dat.read(f)
+            self.names.append(name_dat.name)
+
 pkg_file = open(sys.argv[1], "rb")
 pkg_in = PKG()
 pkg_in.read(pkg_file)
@@ -37,6 +66,6 @@ pkg_file.close()
 outDir = str(sys.argv[1]+"_Extract/")
 os.makedirs(outDir, exist_ok=True)
 for idx,x in enumerate(pkg_in.files):
-    fil = open(outDir + str("%04i" % idx) + ".bin",'wb')
+    fil = open(outDir + pkg_in.names[idx] + ".bin",'wb')
     fil.write(x)
     fil.close()
