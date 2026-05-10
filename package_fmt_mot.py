@@ -18,17 +18,16 @@ class PKG(object):
         self.files = []
     def read(self,f):
         count = u32(f)
-        start = u32(f)
-        end = u32(f)
+        u32(f)
         mappings = []
-        for _a in range(count):
+        for _a in range(count+1):
             mappings.append(u32(f))
         sizes = []
-        mappings.append(end)
         for a in range(count):
             sizes.append(mappings[a+1]-mappings[a])
         mappings.pop()
         for idx,a in enumerate(mappings):
+            f.seek(a)
             self.files.append(f.read(sizes[idx]))
 pkg_file = open(sys.argv[1], "rb")
 pkg_in = PKG()
@@ -37,6 +36,7 @@ pkg_file.close()
 outDir = str(sys.argv[1]+"_Extract/")
 os.makedirs(outDir, exist_ok=True)
 for idx,x in enumerate(pkg_in.files):
-    fil = open(outDir + str("%04i" % idx) + ".bin",'wb')
-    fil.write(x)
-    fil.close()
+    if(x):
+        fil = open(outDir + str("%04i" % idx) + ".bin",'wb')
+        fil.write(x)
+        fil.close()

@@ -35,6 +35,7 @@ pkg_file.close()
 outDir = str(sys.argv[1]+"_Extract/")
 os.makedirs(outDir, exist_ok=True)
 for idx,x in enumerate(pkg_in.files):
-    fil = open(outDir + str("%04i" % idx) + ".bin",'wb')
-    fil.write(x)
-    fil.close()
+    if(x):
+        fil = open(outDir + str("%04i" % idx) + ".bin",'wb')
+        fil.write(x)
+        fil.close()
