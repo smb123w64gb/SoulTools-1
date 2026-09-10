@@ -42,6 +42,9 @@ struct model_submesh{
     u8          unk5 [[color("222222")]];     
     u32         vertex_list_pointer [[color("FFAA00")]]; // points to a vertex_list_t
     u32         unknown [[color("222222")]]; // Always 0x00000000?
+    if(unknown){
+    u16 test @ unknown;
+    }
     u16         vertex_count [[color("2222FF")]];
     u16         normal_count [[color("FF22FF")]];
     s16         bone_rotation_x [[color("00FF99")]];
