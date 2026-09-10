@@ -156,7 +156,7 @@ class MDL(object):
         def __init__(self):
             self.filename = b'\x00'*0x18
             self.tristrip_offset = 0
-            self.meshc_ount = 0
+            self.mesh_count = 0
             self.strip_count = 0
         def read(self,f: FRead):
             self.filename = f.read(0x18)
@@ -171,7 +171,7 @@ class MDL(object):
     class Mesh(object):
         class Cords(object):
             def __init__(self):
-                self.position = [0.0]*3
+                self.position = [0.0,0.0,0.0]
                 self.index = 0
                 self.scale = 1.0
             def read(self,f:FRead):
@@ -182,6 +182,22 @@ class MDL(object):
                 f.f32_3(self.position)
                 f.u16(self.index)
                 f.f16(self.scale)
+        class Extra(object):
+            def __init__(self):
+                self.type = 0
+                self.data = bytearray()
+            def read(self,f : FRead):
+                self.type = f.u16()
+                match (self.type):
+                    case 0:
+                        self.data = f.getString()
+                    case 1 | 2 | 4:
+                        self.data = f.read(6)
+                    case 3:
+                        self.data = f.read(10)
+            def write(self,f : FWrite):
+                f.u16(self.type)
+                f.write(self.data)
         def __init__(self):
             self.bone_id0 = 0
             self.bone_id1 = 0 
@@ -189,6 +205,7 @@ class MDL(object):
             self.unk5 = 0      
             self.vertex_list_pointer = 0 
             self.unknown = 0 
+            self.unk_data = MDL.Mesh.Extra()
             self.bone_rotation_x = 0 
             self.bone_rotation_y = 0 
             self.bone_rotation_z = 0 
@@ -227,6 +244,11 @@ class MDL(object):
                 v = self.Cords()
                 v.read(f)
                 self.nor.append(v)
+            if(self.unknown):
+                f.seek(self.unknown)
+                self.unk_data.read(f)
+            else:
+                self.unk_data = None
             f.seek(ret)
         def writeHdr(self,f : FWrite):
             f.u8(self.bone_id0)
@@ -284,6 +306,19 @@ class MDL(object):
             f.u16(self.uv_bind)
             f.u8(len(self.strip))
             for x in self.strip: x.write(f)
+    def __init__(self):
+        self.hdr = MDL.Header()
+        self.meshes = []
+        self.polys = []
+    def read(self,f : FRead):
+        self.hdr.read(f)
+        for x in range(self.hdr.mesh_count):
+            msh = MDL.Mesh()
+            msh.read(f)
+            self.meshes.append(msh)
+        f.seek(self.hdr.tristrip_offset)
+        for x in range(self.hdr.strip_count):
+            strip = MDL.Polygon()
+            strip.read(f)
+            self.polys.append(strip)
         
-        
-
