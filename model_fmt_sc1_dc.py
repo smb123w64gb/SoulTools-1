@@ -26,7 +26,7 @@ class FRead(object): #Generic file reader
     def s8(self):
         return struct.unpack(self.endian+'b', self.file.read(1))[0]
     def f16(self):
-        v = struct.unpack("<H", file.read(2))[0] << 16
+        v = struct.unpack("<H", self.file.read(2))[0] << 16
         vv = struct.unpack("<f", v.to_bytes(4, byteorder='little'))[0]
         return vv
     def f16_2(self):
@@ -189,8 +189,6 @@ class MDL(object):
             self.unk5 = 0      
             self.vertex_list_pointer = 0 
             self.unknown = 0 
-            self.vertex_count = 0 
-            self.normal_count = 0 
             self.bone_rotation_x = 0 
             self.bone_rotation_y = 0 
             self.bone_rotation_z = 0 
@@ -208,8 +206,8 @@ class MDL(object):
             self.unk5 = f.u8()
             self.vertex_list_pointer = f.u32()
             self.unknown = f.u32()
-            self.vertex_count = f.u16()
-            self.normal_count = f.u16()
+            vertex_count = f.u16()
+            normal_count = f.u16()
             self.bone_rotation_x = f.s16()
             self.bone_rotation_y = f.s16()
             self.bone_rotation_z = f.s16()
@@ -221,24 +219,25 @@ class MDL(object):
 
             ret = f.tell()
             f.seek(self.vertex_list_pointer)
-            for x in range(self.vertex_count):
+            for x in range(vertex_count):
                 v = self.Cords()
                 v.read(f)
                 self.pos.append(v)
-            for x in range(self.normal_count):
+            for x in range(normal_count):
                 v = self.Cords()
                 v.read(f)
                 self.nor.append(v)
             f.seek(ret)
-        def write(self,f : FWrite):
+        def writeHdr(self,f : FWrite):
             f.u8(self.bone_id0)
             f.u8(self.bone_id1)
             f.u8(self.unk4)
             f.u8(self.unk5)
-            f.u32(self.vertex_list_pointer)
+            self.vertex_list_pointer = f.tell()#So we can write it later.
+            f.u32(0xDEADBEEF)
             f.u32(self.unknown)
-            f.u16(self.vertex_count)
-            f.u16(self.normal_count)
+            f.u16(len(self.pos))
+            f.u16(len(self.nor))
             f.s16(self.bone_rotation_x)
             f.s16(self.bone_rotation_y)
             f.s16(self.bone_rotation_z)
@@ -247,6 +246,13 @@ class MDL(object):
             f.s16(self.bone_position_y)
             f.s16(self.bone_position_z)
             f.s16(self.parent_bone_id)
+        def writeData(self,f : FWrite):
+            posWrite = f.tell()
+            f.seek(self.vertex_list_pointer)
+            f.u32(posWrite)
+            f.seek(posWrite)
+            for x in self.pos:x.write(f)
+            for x in self.nor:x.write(f)
     class Polygon(object):
         class Index(object):
             def __init__(self):
